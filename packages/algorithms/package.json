@@ -1,0 +1,62 @@
+{
+  "name": "@renaiss/algorithms",
+  "version": "0.1.0",
+  "description": "The fair-set selection algorithms — ranked (adaptive score-and-rank) and tilt (globally monotone max-entropy value tilt). Deterministic, VRF-seeded; both form a card set that hits a target expected value and per-tier rarity quotas.",
+  "keywords": [
+    "gacha",
+    "set-building",
+    "deterministic",
+    "vrf",
+    "expected-value",
+    "selection-algorithm",
+    "max-entropy"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Renaiss-Protocol/renaiss-fair.git",
+    "directory": "packages/algorithms"
+  },
+  "homepage": "https://github.com/Renaiss-Protocol/renaiss-fair/tree/main/packages/algorithms#readme",
+  "bugs": "https://github.com/Renaiss-Protocol/renaiss-fair/issues",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      "./*": {
+        "types": "./dist/*.d.ts",
+        "import": "./dist/*.js"
+      }
+    }
+  },
+  "files": [
+    "src",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:coverage": "c8 --reporter=text --reporter=html node --import tsx --test \"src/**/*.test.ts\"",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.2.0",
+    "viem": "^2.50.4"
+  },
+  "devDependencies": {
+    "@renaiss/ecvrf": "workspace:*",
+    "@types/node": "^24.0.0",
+    "c8": "^10.1.3",
+    "tsx": "^4.19.0",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

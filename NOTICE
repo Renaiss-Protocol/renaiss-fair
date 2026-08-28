@@ -1,0 +1,15 @@
+renaiss-fair
+Copyright (c) 2026 Renaiss
+
+This repository is licensed under the MIT License (see LICENSE). It depends on
+third-party packages that remain under their own licenses, including:
+
+- GSAP and @gsap/react (https://gsap.com) — GreenSock "Standard" License
+  (https://gsap.com/community/standard-license/), not MIT. GSAP is not
+  vendored here; it is fetched from npm at install time and used unmodified.
+- @noble/curves, @noble/hashes — MIT
+- viem — MIT
+- Next.js, React — MIT
+
+Nothing in this repository grants rights to those packages beyond what their
+own licenses provide.

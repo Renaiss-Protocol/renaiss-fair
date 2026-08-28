@@ -1,0 +1,15 @@
+{
+  "name": "renaiss-fair",
+  "private": true,
+  "packageManager": "pnpm@9.15.1",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "generate-fixtures": "turbo run generate-fixtures"
+  },
+  "devDependencies": {
+    "turbo": "^2.10.5"
+  }
+}

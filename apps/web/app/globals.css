@@ -1,0 +1,872 @@
+@import "tailwindcss";
+
+/* ── Design tokens (renaiss.xyz design system), Tailwind v4 CSS-first theme ── */
+@theme {
+  --color-canvas: #0a0a0b;
+  --color-surface: #141416;
+  --color-raised: #1c1c20;
+  --color-hairline: rgba(255, 255, 255, 0.09);
+  --color-muted: rgba(255, 255, 255, 0.5);
+  --color-gain: #78ff6c;
+  --color-loss: #ff3268;
+  --color-message: #ffc800;
+  --color-tier-s: #ffc800;
+  --color-tier-a: #ff6f00;
+  --color-tier-b: #ff5e86;
+  --color-tier-c: #8260ff;
+  --color-tier-d: #afafaf;
+  --color-grad-1: #ff9a5a;
+  --color-grad-2: #ff5e86;
+  --color-grad-3: #b45cff;
+  --color-grad-4: #4b7bff;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  --shadow-glow: 0 0 26px rgba(255, 120, 150, 0.3);
+  --shadow-glow-strong: 0 0 42px rgba(255, 120, 150, 0.45);
+  --shadow-card: 0 30px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Font tokens reference the next/font variables, so they must resolve at
+   use-time (inline), not be inlined into the theme at build time. */
+@theme inline {
+  --font-display: var(--font-poppins), system-ui, sans-serif;
+  --font-body: var(--font-manrope), system-ui, sans-serif;
+}
+
+/* v3 `backgroundImage.grad-brand` token, ported as an explicit utility. */
+@utility bg-grad-brand {
+  background-image: linear-gradient(
+    90deg,
+    #ff9a5a 0%,
+    #ff5e86 30%,
+    #b45cff 58%,
+    #4b7bff 84%,
+    #e6cdea 100%
+  );
+}
+
+/* Renaiss design tokens (renaiss.xyz design system) */
+:root {
+  --bg-canvas: #0a0a0b;
+  --surface: #141416;
+  --surface-raised: #1c1c20;
+  --border: rgba(255, 255, 255, 0.09);
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.5);
+
+  --gain: #78ff6c;
+  --loss: #ff3268;
+  --message: #ffc800;
+
+  --grad-brand: linear-gradient(
+    90deg,
+    #ff9a5a 0%,
+    #ff5e86 30%,
+    #b45cff 58%,
+    #4b7bff 84%,
+    #e6cdea 100%
+  );
+
+  --shadow-glow: 0 0 26px rgba(255, 120, 150, 0.3);
+  --shadow-card: 0 30px 60px rgba(0, 0, 0, 0.5);
+
+  /* Whitepaper pillar palettes. Each mood has separate text, wash, and line
+     tokens so long-form prose remains calm while the three pillars stay
+     recognizable. Horizon is the default. */
+  --wp-palette-coastal-inventory-solid: #7a5a00;
+  --wp-palette-coastal-inventory-wash: #f5f1e7;
+  --wp-palette-coastal-inventory-line: #ddd0a8;
+  --wp-palette-coastal-algorithm-solid: #365e7d;
+  --wp-palette-coastal-algorithm-wash: #eff2f4;
+  --wp-palette-coastal-algorithm-line: #cad6dd;
+  --wp-palette-coastal-draw-solid: #006f89;
+  --wp-palette-coastal-draw-wash: #ecf3f5;
+  --wp-palette-coastal-draw-line: #bbd8df;
+
+  --wp-palette-blueprint-inventory-solid: #785c19;
+  --wp-palette-blueprint-inventory-wash: #f4f1ea;
+  --wp-palette-blueprint-inventory-line: #dcd2b7;
+  --wp-palette-blueprint-algorithm-solid: #3b607d;
+  --wp-palette-blueprint-algorithm-wash: #eff3f5;
+  --wp-palette-blueprint-algorithm-line: #c9d6dd;
+  --wp-palette-blueprint-draw-solid: #2f7d74;
+  --wp-palette-blueprint-draw-wash: #ecf5f3;
+  --wp-palette-blueprint-draw-line: #b7ddd6;
+
+  --wp-palette-blueprint-cobalt-inventory-solid: var(
+    --wp-palette-blueprint-inventory-solid
+  );
+  --wp-palette-blueprint-cobalt-inventory-wash: var(
+    --wp-palette-blueprint-inventory-wash
+  );
+  --wp-palette-blueprint-cobalt-inventory-line: var(
+    --wp-palette-blueprint-inventory-line
+  );
+  --wp-palette-blueprint-cobalt-algorithm-solid: #245b9b;
+  --wp-palette-blueprint-cobalt-algorithm-wash: #edf2f8;
+  --wp-palette-blueprint-cobalt-algorithm-line: #bfcfe1;
+  --wp-palette-blueprint-cobalt-draw-solid: #6b4a86;
+  --wp-palette-blueprint-cobalt-draw-wash: #f1edf5;
+  --wp-palette-blueprint-cobalt-draw-line: #d2c5df;
+
+  --wp-palette-blueprint-technical-inventory-solid: var(
+    --wp-palette-blueprint-inventory-solid
+  );
+  --wp-palette-blueprint-technical-inventory-wash: var(
+    --wp-palette-blueprint-inventory-wash
+  );
+  --wp-palette-blueprint-technical-inventory-line: var(
+    --wp-palette-blueprint-inventory-line
+  );
+  --wp-palette-blueprint-technical-algorithm-solid: #1f6295;
+  --wp-palette-blueprint-technical-algorithm-wash: #ebf2f7;
+  --wp-palette-blueprint-technical-algorithm-line: #bbd0df;
+  --wp-palette-blueprint-technical-draw-solid: #3f7d4e;
+  --wp-palette-blueprint-technical-draw-wash: #edf5ee;
+  --wp-palette-blueprint-technical-draw-line: #c3ddc8;
+
+  --wp-palette-blueprint-signal-inventory-solid: #a3521f;
+  --wp-palette-blueprint-signal-inventory-wash: #f6efe9;
+  --wp-palette-blueprint-signal-inventory-line: #e2c9b6;
+  --wp-palette-blueprint-signal-algorithm-solid: #414b52;
+  --wp-palette-blueprint-signal-algorithm-wash: #eff1f2;
+  --wp-palette-blueprint-signal-algorithm-line: #c8ced2;
+  --wp-palette-blueprint-signal-draw-solid: #245b9b;
+  --wp-palette-blueprint-signal-draw-wash: #edf2f8;
+  --wp-palette-blueprint-signal-draw-line: #bfcfe1;
+
+  --wp-palette-blueprint-navy-inventory-solid: var(
+    --wp-palette-blueprint-inventory-solid
+  );
+  --wp-palette-blueprint-navy-inventory-wash: var(
+    --wp-palette-blueprint-inventory-wash
+  );
+  --wp-palette-blueprint-navy-inventory-line: var(
+    --wp-palette-blueprint-inventory-line
+  );
+  --wp-palette-blueprint-navy-algorithm-solid: #234e70;
+  --wp-palette-blueprint-navy-algorithm-wash: #edf1f4;
+  --wp-palette-blueprint-navy-algorithm-line: #c1cdd6;
+  --wp-palette-blueprint-navy-draw-solid: #2f7d74;
+  --wp-palette-blueprint-navy-draw-wash: #ecf5f3;
+  --wp-palette-blueprint-navy-draw-line: #b7ddd6;
+
+  --wp-palette-horizon-inventory-solid: #806000;
+  --wp-palette-horizon-inventory-wash: #f5f1e8;
+  --wp-palette-horizon-inventory-line: #ddd1af;
+  --wp-palette-horizon-algorithm-solid: #275a96;
+  --wp-palette-horizon-algorithm-wash: #eef2f7;
+  --wp-palette-horizon-algorithm-line: #c4d2e2;
+  --wp-palette-horizon-draw-solid: #00778d;
+  --wp-palette-horizon-draw-wash: #ecf5f6;
+  --wp-palette-horizon-draw-line: #b5d8de;
+
+  --wp-palette-ink-inventory-solid: #59616a;
+  --wp-palette-ink-inventory-wash: #f1f2f3;
+  --wp-palette-ink-inventory-line: #d2d6d9;
+  --wp-palette-ink-algorithm-solid: #3c566c;
+  --wp-palette-ink-algorithm-wash: #eef1f3;
+  --wp-palette-ink-algorithm-line: #c8d2d9;
+  --wp-palette-ink-draw-solid: #2f6f6a;
+  --wp-palette-ink-draw-wash: #ecf4f3;
+  --wp-palette-ink-draw-line: #b9dbd6;
+
+  /* Vibrant to subdued spectrum */
+  --wp-palette-coral-reef-inventory-solid: #d9480f;
+  --wp-palette-coral-reef-inventory-wash: #fbeee7;
+  --wp-palette-coral-reef-inventory-line: #f0c3a8;
+  --wp-palette-coral-reef-algorithm-solid: #1971c2;
+  --wp-palette-coral-reef-algorithm-wash: #e9f1fa;
+  --wp-palette-coral-reef-algorithm-line: #b3d0ec;
+  --wp-palette-coral-reef-draw-solid: #0c8599;
+  --wp-palette-coral-reef-draw-wash: #e6f4f6;
+  --wp-palette-coral-reef-draw-line: #a9dae1;
+
+  --wp-palette-orchid-inventory-solid: #a61e4d;
+  --wp-palette-orchid-inventory-wash: #f9e9ee;
+  --wp-palette-orchid-inventory-line: #e6b3c4;
+  --wp-palette-orchid-algorithm-solid: #5f3dc4;
+  --wp-palette-orchid-algorithm-wash: #efeafa;
+  --wp-palette-orchid-algorithm-line: #cabce9;
+  --wp-palette-orchid-draw-solid: #0b7285;
+  --wp-palette-orchid-draw-wash: #e6f2f4;
+  --wp-palette-orchid-draw-line: #a7d3db;
+
+  --wp-palette-emerald-inventory-solid: #b5451b;
+  --wp-palette-emerald-inventory-wash: #f9ebe4;
+  --wp-palette-emerald-inventory-line: #ebc1ab;
+  --wp-palette-emerald-algorithm-solid: #1864ab;
+  --wp-palette-emerald-algorithm-wash: #e8f0f8;
+  --wp-palette-emerald-algorithm-line: #b0cce6;
+  --wp-palette-emerald-draw-solid: #087f5b;
+  --wp-palette-emerald-draw-wash: #e5f3ee;
+  --wp-palette-emerald-draw-line: #a4d8c6;
+
+  --wp-palette-meadow-inventory-solid: #8a6d1f;
+  --wp-palette-meadow-inventory-wash: #f4f0e5;
+  --wp-palette-meadow-inventory-line: #ddd0a9;
+  --wp-palette-meadow-algorithm-solid: #37639b;
+  --wp-palette-meadow-algorithm-wash: #ecf1f7;
+  --wp-palette-meadow-algorithm-line: #c1d2e6;
+  --wp-palette-meadow-draw-solid: #2f8f5b;
+  --wp-palette-meadow-draw-wash: #e9f5ee;
+  --wp-palette-meadow-draw-line: #b3ddc4;
+
+  --wp-palette-dusk-inventory-solid: #8a5a44;
+  --wp-palette-dusk-inventory-wash: #f4efec;
+  --wp-palette-dusk-inventory-line: #ddc9bf;
+  --wp-palette-dusk-algorithm-solid: #4a5b8c;
+  --wp-palette-dusk-algorithm-wash: #eef0f5;
+  --wp-palette-dusk-algorithm-line: #cbd2e2;
+  --wp-palette-dusk-draw-solid: #3d7d78;
+  --wp-palette-dusk-draw-wash: #ecf3f2;
+  --wp-palette-dusk-draw-line: #bfd8d5;
+
+  --wp-palette-fog-inventory-solid: #7a6a57;
+  --wp-palette-fog-inventory-wash: #f2f0ec;
+  --wp-palette-fog-inventory-line: #d5cec3;
+  --wp-palette-fog-algorithm-solid: #566277;
+  --wp-palette-fog-algorithm-wash: #eef0f3;
+  --wp-palette-fog-algorithm-line: #cbd0da;
+  --wp-palette-fog-draw-solid: #5b7370;
+  --wp-palette-fog-draw-wash: #eef2f1;
+  --wp-palette-fog-draw-line: #ccd6d4;
+
+  --wp-tone-inventory-solid: var(--wp-palette-horizon-inventory-solid);
+  --wp-tone-inventory-wash: var(--wp-palette-horizon-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-horizon-inventory-line);
+  --wp-tone-algorithm-solid: var(--wp-palette-horizon-algorithm-solid);
+  --wp-tone-algorithm-wash: var(--wp-palette-horizon-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-horizon-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-horizon-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-horizon-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-horizon-draw-line);
+
+  /* Whitepaper surface treatment. Surfaces always paint both a border and a
+     glow; these alpha tokens decide which one is visible. Default is "whisper"
+     (faintest glow, no border); alternatives select via data-wp-surface.
+     halo/ambient scope the large pillar sections, inner scopes the small
+     surfaces nested in prose (formulas, callouts, cards). */
+  --wp-line-a: 0%;
+  --wp-glow-halo-a: 6%;
+  --wp-glow-ambient-a: 2.5%;
+  --wp-glow-inner-a: 5%;
+}
+
+:root[data-wp-surface="veil"] {
+  --wp-glow-halo-a: 10%;
+  --wp-glow-ambient-a: 4.5%;
+  --wp-glow-inner-a: 9%;
+}
+
+:root[data-wp-surface="aura"] {
+  --wp-glow-halo-a: 16%;
+  --wp-glow-ambient-a: 7%;
+  --wp-glow-inner-a: 13%;
+}
+
+:root[data-wp-surface="outline"] {
+  --wp-line-a: 100%;
+  --wp-glow-halo-a: 0%;
+  --wp-glow-ambient-a: 0%;
+  --wp-glow-inner-a: 0%;
+}
+
+:root[data-wp-palette="blueprint"] {
+  --wp-tone-inventory-solid: var(--wp-palette-blueprint-inventory-solid);
+  --wp-tone-inventory-wash: var(--wp-palette-blueprint-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-blueprint-inventory-line);
+  --wp-tone-algorithm-solid: var(--wp-palette-blueprint-algorithm-solid);
+  --wp-tone-algorithm-wash: var(--wp-palette-blueprint-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-blueprint-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-blueprint-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-blueprint-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-blueprint-draw-line);
+}
+
+:root[data-wp-palette="blueprint-cobalt"] {
+  --wp-tone-inventory-solid: var(
+    --wp-palette-blueprint-cobalt-inventory-solid
+  );
+  --wp-tone-inventory-wash: var(--wp-palette-blueprint-cobalt-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-blueprint-cobalt-inventory-line);
+  --wp-tone-algorithm-solid: var(
+    --wp-palette-blueprint-cobalt-algorithm-solid
+  );
+  --wp-tone-algorithm-wash: var(--wp-palette-blueprint-cobalt-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-blueprint-cobalt-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-blueprint-cobalt-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-blueprint-cobalt-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-blueprint-cobalt-draw-line);
+}
+
+:root[data-wp-palette="blueprint-technical"] {
+  --wp-tone-inventory-solid: var(
+    --wp-palette-blueprint-technical-inventory-solid
+  );
+  --wp-tone-inventory-wash: var(
+    --wp-palette-blueprint-technical-inventory-wash
+  );
+  --wp-tone-inventory-line: var(
+    --wp-palette-blueprint-technical-inventory-line
+  );
+  --wp-tone-algorithm-solid: var(
+    --wp-palette-blueprint-technical-algorithm-solid
+  );
+  --wp-tone-algorithm-wash: var(
+    --wp-palette-blueprint-technical-algorithm-wash
+  );
+  --wp-tone-algorithm-line: var(
+    --wp-palette-blueprint-technical-algorithm-line
+  );
+  --wp-tone-draw-solid: var(--wp-palette-blueprint-technical-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-blueprint-technical-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-blueprint-technical-draw-line);
+}
+
+:root[data-wp-palette="blueprint-signal"] {
+  --wp-tone-inventory-solid: var(
+    --wp-palette-blueprint-signal-inventory-solid
+  );
+  --wp-tone-inventory-wash: var(--wp-palette-blueprint-signal-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-blueprint-signal-inventory-line);
+  --wp-tone-algorithm-solid: var(
+    --wp-palette-blueprint-signal-algorithm-solid
+  );
+  --wp-tone-algorithm-wash: var(--wp-palette-blueprint-signal-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-blueprint-signal-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-blueprint-signal-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-blueprint-signal-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-blueprint-signal-draw-line);
+}
+
+:root[data-wp-palette="blueprint-navy"] {
+  --wp-tone-inventory-solid: var(
+    --wp-palette-blueprint-navy-inventory-solid
+  );
+  --wp-tone-inventory-wash: var(--wp-palette-blueprint-navy-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-blueprint-navy-inventory-line);
+  --wp-tone-algorithm-solid: var(
+    --wp-palette-blueprint-navy-algorithm-solid
+  );
+  --wp-tone-algorithm-wash: var(--wp-palette-blueprint-navy-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-blueprint-navy-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-blueprint-navy-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-blueprint-navy-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-blueprint-navy-draw-line);
+}
+
+:root[data-wp-palette="horizon"] {
+  --wp-tone-inventory-solid: var(--wp-palette-horizon-inventory-solid);
+  --wp-tone-inventory-wash: var(--wp-palette-horizon-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-horizon-inventory-line);
+  --wp-tone-algorithm-solid: var(--wp-palette-horizon-algorithm-solid);
+  --wp-tone-algorithm-wash: var(--wp-palette-horizon-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-horizon-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-horizon-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-horizon-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-horizon-draw-line);
+}
+
+:root[data-wp-palette="ink"] {
+  --wp-tone-inventory-solid: var(--wp-palette-ink-inventory-solid);
+  --wp-tone-inventory-wash: var(--wp-palette-ink-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-ink-inventory-line);
+  --wp-tone-algorithm-solid: var(--wp-palette-ink-algorithm-solid);
+  --wp-tone-algorithm-wash: var(--wp-palette-ink-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-ink-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-ink-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-ink-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-ink-draw-line);
+}
+
+:root[data-wp-palette="coral-reef"] {
+  --wp-tone-inventory-solid: var(--wp-palette-coral-reef-inventory-solid);
+  --wp-tone-inventory-wash: var(--wp-palette-coral-reef-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-coral-reef-inventory-line);
+  --wp-tone-algorithm-solid: var(--wp-palette-coral-reef-algorithm-solid);
+  --wp-tone-algorithm-wash: var(--wp-palette-coral-reef-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-coral-reef-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-coral-reef-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-coral-reef-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-coral-reef-draw-line);
+}
+
+:root[data-wp-palette="orchid"] {
+  --wp-tone-inventory-solid: var(--wp-palette-orchid-inventory-solid);
+  --wp-tone-inventory-wash: var(--wp-palette-orchid-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-orchid-inventory-line);
+  --wp-tone-algorithm-solid: var(--wp-palette-orchid-algorithm-solid);
+  --wp-tone-algorithm-wash: var(--wp-palette-orchid-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-orchid-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-orchid-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-orchid-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-orchid-draw-line);
+}
+
+:root[data-wp-palette="emerald"] {
+  --wp-tone-inventory-solid: var(--wp-palette-emerald-inventory-solid);
+  --wp-tone-inventory-wash: var(--wp-palette-emerald-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-emerald-inventory-line);
+  --wp-tone-algorithm-solid: var(--wp-palette-emerald-algorithm-solid);
+  --wp-tone-algorithm-wash: var(--wp-palette-emerald-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-emerald-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-emerald-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-emerald-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-emerald-draw-line);
+}
+
+:root[data-wp-palette="meadow"] {
+  --wp-tone-inventory-solid: var(--wp-palette-meadow-inventory-solid);
+  --wp-tone-inventory-wash: var(--wp-palette-meadow-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-meadow-inventory-line);
+  --wp-tone-algorithm-solid: var(--wp-palette-meadow-algorithm-solid);
+  --wp-tone-algorithm-wash: var(--wp-palette-meadow-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-meadow-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-meadow-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-meadow-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-meadow-draw-line);
+}
+
+:root[data-wp-palette="dusk"] {
+  --wp-tone-inventory-solid: var(--wp-palette-dusk-inventory-solid);
+  --wp-tone-inventory-wash: var(--wp-palette-dusk-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-dusk-inventory-line);
+  --wp-tone-algorithm-solid: var(--wp-palette-dusk-algorithm-solid);
+  --wp-tone-algorithm-wash: var(--wp-palette-dusk-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-dusk-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-dusk-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-dusk-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-dusk-draw-line);
+}
+
+:root[data-wp-palette="fog"] {
+  --wp-tone-inventory-solid: var(--wp-palette-fog-inventory-solid);
+  --wp-tone-inventory-wash: var(--wp-palette-fog-inventory-wash);
+  --wp-tone-inventory-line: var(--wp-palette-fog-inventory-line);
+  --wp-tone-algorithm-solid: var(--wp-palette-fog-algorithm-solid);
+  --wp-tone-algorithm-wash: var(--wp-palette-fog-algorithm-wash);
+  --wp-tone-algorithm-line: var(--wp-palette-fog-algorithm-line);
+  --wp-tone-draw-solid: var(--wp-palette-fog-draw-solid);
+  --wp-tone-draw-wash: var(--wp-palette-fog-draw-wash);
+  --wp-tone-draw-line: var(--wp-palette-fog-draw-line);
+}
+
+html {
+  background: var(--bg-canvas);
+  color: var(--text);
+  /* Reserve the scrollbar gutter so tall pages (e.g. /faq) don't shift the
+     layout when the vertical scrollbar appears. */
+  scrollbar-gutter: stable;
+}
+
+body {
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin, theme-matched scrollbar for capped-height panels (token grids, draw
+   tables) — muted instead of the bright default. */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-hairline) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--color-hairline);
+  border-radius: 9999px;
+}
+.scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+/* Primary action: gradient OUTLINE on dark fill + soft glow (never solid gradient fill). */
+.btn-primary {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-weight: 600;
+  color: var(--text);
+  border: 1.6px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(#101018, #101018) padding-box,
+    var(--grad-brand) border-box;
+  box-shadow: var(--shadow-glow);
+  transition: box-shadow 0.25s ease;
+}
+.btn-primary:hover {
+  box-shadow: 0 0 42px rgba(255, 120, 150, 0.45);
+}
+.btn-primary:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Secondary action: solid white pill (design-system "secondary" variant). */
+.btn-secondary {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-weight: 600;
+  color: #0a0a0b;
+  border-radius: 999px;
+  background: #fff;
+  transition: opacity 0.2s ease;
+}
+.btn-secondary:hover {
+  opacity: 0.88;
+}
+.btn-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-weight: 600;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  transition: border-color 0.2s ease;
+}
+.btn-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Gradient hairline border on a surface (target subpack, hero card). */
+.gradient-border {
+  border: 1.6px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--grad-brand) border-box;
+}
+
+.text-gradient {
+  background: var(--grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.font-mono-num {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* Sticky site header needs a background so content scrolls under it cleanly. */
+/* The whitepaper's mobile contents bar sits directly under the site chrome.
+   It is opaque so that a seam between the two — the offset is measured, and a
+   measurement can be a pixel out — never becomes a window onto the article. */
+.wp-toc-bar {
+  background: #f8f7f4;
+}
+
+/* The frosting belongs to the whole sticky block, not the header alone. The
+   block is transformed to hide the caveat strip, and a transformed ancestor
+   changes what backdrop-filter treats as its backdrop — left on the header,
+   the blur stopped seeing the page and its translucent background simply let
+   content show through unblurred. */
+.site-chrome {
+  /* Opaque, not frosted. The blur this used to pair with never survived the
+     CSS build — the compiled rule carries the background alone — so the
+     translucency was doing nothing but letting the page show through the
+     header, which is plainly visible on a phone where content sits directly
+     beneath it. */
+  background: #0a0a0b;
+}
+
+/* Flowing dashed lines for the formation chart — dashes march along the line so
+   the pipeline reads as flowing. Colour comes from `currentColor` (set with a
+   text-* utility); orientation picks the axis. */
+@keyframes chart-flow-x {
+  to {
+    background-position: 11px 0;
+  }
+}
+@keyframes chart-flow-y {
+  to {
+    background-position: 0 11px;
+  }
+}
+.chart-line-x {
+  background-image: repeating-linear-gradient(
+    to right,
+    currentColor 0 5px,
+    transparent 5px 11px
+  );
+  animation: chart-flow-x 0.7s linear infinite;
+}
+.chart-line-y {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    currentColor 0 5px,
+    transparent 5px 11px
+  );
+  animation: chart-flow-y 0.7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chart-line-x,
+  .chart-line-y {
+    animation: none;
+  }
+}
+
+/* Formation chart rows: task | status | set always sit side by side so the flow
+   reads left to right at every size. Below lg the trio keeps a min width and the
+   chart scrolls horizontally instead of collapsing. The widths are dynamic (the
+   expanded side grows), so they ride in on --chart-cols. */
+.chart-row {
+  /* Small screens: the status collapses to a fixed-width icon and task/set split
+     the rest, so the trio fits without a horizontal scrollbar. The icon column is
+     a fixed size rather than `auto` — the connector fills its cell, so an
+     intrinsic track would resolve against itself and collapse to zero. */
+  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+}
+/* One node expanded, at the widths where the detail opens INSIDE the row: the
+   other side steps out of the way so the panel gets the full width. Only the
+   status icon stays between them.
+   From 640px down there is no inline panel — the detail takes over the screen
+   as a sheet — so the row must not move at all there. Widening a column behind
+   a full-screen sheet is invisible while it is open and shows only on the way
+   out, as the chart snaps back. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .chart-row--open-task {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+  .chart-row--open-set {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .chart-row {
+    grid-template-columns: var(--chart-cols);
+  }
+}
+
+/* The step waiting to be run wears a brand gradient that sweeps around its
+   border, so the one thing the reader can act on is obvious among five cards
+   that are otherwise identical. The fill is painted as its own padding-box
+   layer, leaving the gradient visible only in the border itself. */
+/**
+ * The phone detail sheet arriving over the chart. A plain CSS fade rather than
+ * a tween: it runs off the compositor instead of requestAnimationFrame, so a
+ * backgrounded tab cannot strand it half-played, and because the keyframe only
+ * names its start the element always settles on its own styles — there is no
+ * state in which the sheet can be left invisible.
+ */
+@keyframes sheet-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.sheet-fade-in {
+  animation: sheet-fade-in 0.18s ease-out;
+}
+
+/* Leaving is quicker than arriving — a dismissal, not a second presentation.
+   `forwards` holds the panel transparent for the frames between the animation
+   ending and React unmounting it, so it cannot flash back. */
+@keyframes sheet-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.sheet-fade-out {
+  animation: sheet-fade-out 0.11s ease-in forwards;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-fade-in,
+  .sheet-fade-out {
+    animation: none;
+  }
+}
+
+@keyframes step-active-sweep {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      0 0,
+      200% 0;
+  }
+}
+.step-active {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(
+        90deg,
+        #ff9a5a,
+        #ff5e86,
+        #b45cff,
+        #4b7bff,
+        #b45cff,
+        #ff5e86,
+        #ff9a5a
+      )
+      border-box;
+  background-size:
+    100% 100%,
+    200% 100%;
+  animation: step-active-sweep 4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .step-active {
+    animation: none;
+  }
+}
+
+/* Rejected-run stack. The face and the layers behind it need OPAQUE fills: a
+   translucent tint would let the pile read straight through the card, which
+   looks like stray lines crossing it rather than a stack. Tinting the surface
+   with a few percent of the loss colour keeps the failure signal. */
+.stack-face {
+  background: color-mix(in srgb, var(--loss) 5%, var(--surface));
+}
+.stack-layer {
+  background: color-mix(in srgb, var(--loss) 4%, var(--surface));
+}
+
+/* The inventory pill heads the formation flow, so it wears the brand gradient
+   as a border over a dark fill — the same treatment as .btn-primary. */
+.inventory-pill {
+  border: 1.6px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(#101018, #101018) padding-box,
+    var(--grad-brand) border-box;
+  box-shadow: var(--shadow-glow);
+}
+
+/* Live set pill — a soft breathing glow so an actively-ripping set draws the
+   eye. Pairs with the radar ping on its dot. */
+@keyframes live-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(120, 255, 108, 0);
+  }
+  50% {
+    box-shadow: 0 0 10px 1px rgba(120, 255, 108, 0.35);
+  }
+}
+.live-pill {
+  animation: live-glow 2s ease-in-out infinite;
+}
+
+/* The live set's card breathes with the same 2s cadence as its pill — the
+   border tints green and a faint halo swells around the whole node. */
+@keyframes live-node {
+  0%,
+  100% {
+    border-color: rgba(120, 255, 108, 0.2);
+    box-shadow: 0 0 0 0 rgba(120, 255, 108, 0);
+  }
+  50% {
+    border-color: rgba(120, 255, 108, 0.55);
+    box-shadow: 0 0 14px 0 rgba(120, 255, 108, 0.16);
+  }
+}
+.live-node {
+  animation: live-node 2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-pill,
+  .live-node {
+    animation: none;
+  }
+  .live-node {
+    border-color: rgba(120, 255, 108, 0.4);
+  }
+}
+
+/* ── Light theme (whitepaper) — flipped by [data-page-theme="light"] on <html>,
+      set from the floating Whitepaper/Verify button ─────────────────────── */
+:root[data-page-theme="light"] body {
+  background: #f8f7f4 !important;
+  color: #17171a;
+}
+/* Light-theme chrome is scoped to the whole sticky block, not the header: the
+   caveat strip is a sibling of the header, so header-scoped rules never reached
+   it and its muted text stayed white-on-cream — invisible on the whitepaper. */
+:root[data-page-theme="light"] .site-header {
+  border-color: rgba(0, 0, 0, 0.09);
+}
+:root[data-page-theme="light"] .site-chrome {
+  background: #f8f7f4;
+}
+:root[data-page-theme="light"] .site-chrome .logo-on-dark {
+  display: none;
+}
+:root[data-page-theme="light"] .site-chrome .logo-on-light {
+  display: flex;
+}
+:root[data-page-theme="light"] .site-chrome .text-muted {
+  color: rgba(0, 0, 0, 0.55);
+}
+:root[data-page-theme="light"] .site-chrome .text-white {
+  color: #17171a;
+}
+:root[data-page-theme="light"] .site-chrome .border-hairline {
+  border-color: rgba(0, 0, 0, 0.14);
+}
+:root[data-page-theme="light"] .site-chrome .bg-raised {
+  background: rgba(0, 0, 0, 0.04);
+}
+:root[data-page-theme="light"] .site-chrome [data-indicator] {
+  background: rgba(0, 0, 0, 0.07);
+  border-color: rgba(0, 0, 0, 0.22);
+}
+:root[data-page-theme="light"] .site-chrome a:hover {
+  color: #17171a;
+}
+
+/* Root splash: indeterminate gradient sweep while the redirect fires. */
+@keyframes loading-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+.loading-sweep {
+  animation: loading-sweep 1.1s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-sweep {
+    animation: none;
+    width: 100%;
+  }
+}
+
+/* Horizontal shelf scrollbar */
+.shelf::-webkit-scrollbar {
+  height: 6px;
+}
+.shelf::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+.shelf::-webkit-scrollbar-track {
+  background: transparent;
+}

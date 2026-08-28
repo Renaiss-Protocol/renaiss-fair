@@ -1,0 +1,65 @@
+name: Deploy
+
+# Transparency: the public site is built from `main` right here, in this
+# workflow — anyone can trace the served pages back to the exact commit.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Data-source config lives in repository Variables (Settings → Secrets
+      # and variables → Actions → Variables), not Secrets: every value here is
+      # NEXT_PUBLIC_* and inlined into the public bundle, so there is nothing
+      # to hide — and Variables stay readable in the build log. Unset ones
+      # arrive empty, which lib/config.ts treats as absent (falling back to
+      # the demo fixtures / chapel defaults).
+      - name: Build static export
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_RENAISS_API_URL: ${{ vars.NEXT_PUBLIC_RENAISS_API_URL }}
+          NEXT_PUBLIC_RPC_URL: ${{ vars.NEXT_PUBLIC_RPC_URL }}
+          NEXT_PUBLIC_TVM_ADDRESS: ${{ vars.NEXT_PUBLIC_TVM_ADDRESS }}
+          NEXT_PUBLIC_NFT_ADDRESS: ${{ vars.NEXT_PUBLIC_NFT_ADDRESS }}
+          NEXT_PUBLIC_EXPLORER_URL: ${{ vars.NEXT_PUBLIC_EXPLORER_URL }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
