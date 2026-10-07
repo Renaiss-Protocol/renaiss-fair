@@ -1,5 +1,5 @@
 /**
- * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v0/fair/packings/{taskId}
+ * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v1/fair/packings/{taskId}
  *
  * One run's heavy half, keyed by the opaque taskId from the packings list
  * (get-packing.ts): the candidate pool (stored order — rule 1.3), the

@@ -57,7 +57,7 @@ The data source is switched by `NEXT_PUBLIC_RENAISS_API_URL` (see
 - **Set** ⇒ the app reads the public, unauthenticated Renaiss fair-play API.
   Give it the bare host (no path); the `/vN/fair` route prefix and every
   endpoint live in `lib/api/renaiss/verify/` (`http.ts` holds the prefix —
-  `/v1/fair` is the current surface, `/v0/fair` its deprecated predecessor).
+  `/v1/fair` is the API surface).
   In API mode, `NEXT_PUBLIC_RPC_URL` + `NEXT_PUBLIC_TVM_ADDRESS` additionally
   point the "published root" chip at the vending-machine contract's
   on-chain `merkleRoots` commitment (unset ⇒ it compares the

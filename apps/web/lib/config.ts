@@ -3,7 +3,7 @@
  * site is a static export; switching modes means rebuilding).
  *
  * Set NEXT_PUBLIC_RENAISS_API_URL to the Renaiss API host (e.g.
- * https://api.example.com — no path; route prefixes like /v0/fair live in
+ * https://api.example.com — no path; route prefixes like /v1/fair live in
  * lib/api/renaiss) to serve production data; unset ⇒ the mock client serves
  * the committed demo fixtures.
  */

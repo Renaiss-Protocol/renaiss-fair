@@ -1,5 +1,5 @@
 /**
- * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v0/fair/packs
+ * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v1/fair/packs
  *
  * The pack picker — every pack with verifiable history (≥1 formed set or
  * ≥1 finished creation run). The Sets and Packing tabs both require an

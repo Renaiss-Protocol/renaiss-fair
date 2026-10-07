@@ -1,5 +1,5 @@
 /**
- * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v0/fair/packs/{packId}/packings
+ * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v1/fair/packs/{packId}/packings
  *
  * The Packing tab's browse list — run records (status, config, attempt
  * outcomes, EV) with NO token arrays; those live on /packings/{taskId}

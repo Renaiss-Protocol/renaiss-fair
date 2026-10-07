@@ -1,5 +1,5 @@
 /**
- * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v0/fair/packs/{packId}/sets/{setId}
+ * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v1/fair/packs/{packId}/sets/{setId}
  *
  * One set's reveal, keyed by (onChainPackId, setId) from /sets: the full
  * lineup with salts + per-card draw proofs, the served merkleRoot, the

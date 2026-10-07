@@ -1,5 +1,5 @@
 /**
- * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v0/fair/rips/{txHash}
+ * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v1/fair/rips/{txHash}
  *
  * Prove-it in one request: a permitFund tx hash in, both verification tiers
  * out. Tier A (always, even mid-set): the target draw's witness + card +

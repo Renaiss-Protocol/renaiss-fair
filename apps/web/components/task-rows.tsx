@@ -80,6 +80,12 @@ export interface SetTask {
   packId?: string;
   /** The set number this run tried to generate. */
   setId: number;
+  /**
+   * How many runs failed before this one claimed the set. Served with the
+   * accepted run by the pack-scoped packings list; the failed runs themselves
+   * are a separate, paged fetch (get-set-packings.ts).
+   */
+  totalFailCount?: number;
   triggerSource: "checkout" | "cron" | "manual";
   status: "running" | "success" | "failed";
   algoUsed: string | null;

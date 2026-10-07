@@ -5,8 +5,8 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import logoFull from "@/public/logo-full.svg";
 import { gsap, useGSAP } from "@/components/gsap";
-import { type RunSpec } from "@/app/packing/page-client";
 import {
+  pageWindow,
   STATUS_LABEL,
   STATUS_TONE,
   TaskDetail,
@@ -19,7 +19,7 @@ import { SetDetailBody } from "@/components/set-detail";
 import { Tag } from "@/components/tag";
 import { getVrfPublicKey } from "@/lib/api/client";
 import { USE_MOCK_DATA } from "@/lib/config";
-import { useFormation } from "@/lib/use-formation";
+import { useFormation, type RetryPage } from "@/lib/use-formation";
 import { getOnChainMerkleRoot } from "@/lib/onchain";
 import { truncateHex } from "@/lib/format";
 import { DataChip } from "@/components/provenance";
@@ -31,12 +31,12 @@ import type { ActiveSetSummary } from "@/lib/api/renaiss/verify/get-sets";
  *  pill and dashed arrows line up with the card's title, not its expanded body. */
 const NODE_H = "min-h-[58px]";
 
-/** Lazy load: render this many rows first, then reveal more per click. */
 /**
- * Rows, not runs. Four is enough to tell the story on first paint — the newest
- * runs, the rejected streak, and the run that finally claimed the set — while
- * keeping the initial build to three runs. Each run is real cryptography, so
- * every extra row on first paint is real main-thread time.
+ * Lazy load: render this many rows first, then reveal more per click. One row
+ * is one set — its accepted run — so four sets is enough to tell the story on
+ * first paint. Each run is real cryptography in mock mode, so every extra row
+ * on first paint is real main-thread time; the rejections that preceded a set
+ * cost nothing until the reader opens them.
  */
 const INITIAL_ROWS = 4;
 const LOAD_MORE = 5;
@@ -96,8 +96,30 @@ const runHeadline = (t: SetTask): string => {
       t.output.tokens === undefined ? "" : ` · ${t.output.tokens.length} cards`;
     return `${attempts}${cards} · EV ${formatUsd(t.output.expectedValueInUsd)}${took}`;
   }
-  const why = t.errorCode === "TIMEOUT" ? "timed out" : "no valid lineup";
-  return `${attempts} · ${why}${took}`;
+  return `${attempts} · ${failReason(t)}${took}`;
+};
+
+/**
+ * Why a run committed nothing, in the few words a node header can spare. A
+ * pre-run failure never reached the selection loop, so "no valid lineup" —
+ * true only of a loop that ran and rejected everything — would misreport it
+ * (doc §4.4).
+ */
+const failReason = (t: SetTask): string => {
+  switch (t.errorCode) {
+    case "TIMEOUT":
+      return "timed out";
+    case "CONFIG_INVALID":
+      return "config invalid";
+    case "BLOCKED":
+      return "blocked";
+    case "CONCURRENCY_CONFLICT":
+      return "already running";
+    case "TOKEN_DISCOVERY_FAILED":
+      return "no token pool";
+    default:
+      return "no valid lineup";
+  }
 };
 
 /**
@@ -121,7 +143,7 @@ const runHeadlineShort = (t: SetTask): string => {
       ? `${tries}× · ${t.output.tokens.length} cards`
       : `${tries}× · packed`;
   }
-  return `${tries}× · ${t.errorCode === "TIMEOUT" ? "timed out" : "no lineup"}`;
+  return `${tries}× · ${failReason(t)}`;
 };
 
 /**
@@ -147,6 +169,9 @@ export function FormationChart({
     request,
     requestDetail,
     setById,
+    retryCountFor,
+    retriesFor,
+    openRetries,
     ready,
     error,
     hasMoreRuns,
@@ -159,76 +184,57 @@ export function FormationChart({
   const scope = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<Open>(null);
   const [visibleRows, setVisibleRows] = useState(INITIAL_ROWS);
-  const [openStacks, setOpenStacks] = useState<ReadonlySet<string>>(new Set());
+  /**
+   * Runs the reader has opened at least once — a set's rejection summary shows
+   * up under its run from that moment and then stays. It has to survive the run
+   * closing again: on a phone the run's detail is a full-screen sheet, so a
+   * summary tied to the open state would only ever exist behind that sheet,
+   * where it can't be tapped.
+   */
+  const [openedRuns, setOpenedRuns] = useState<ReadonlySet<number>>(new Set());
+  /** Sets whose rejection list is expanded, by set id. */
+  const [expandedRetries, setExpandedRetries] = useState<ReadonlySet<number>>(
+    new Set(),
+  );
 
-  const toggleStack = (key: string) =>
-    setOpenStacks((prev) => {
+  const toggleRetries = (setId: number) => {
+    const willOpen = !expandedRetries.has(setId);
+    setExpandedRetries((prev) => {
       const next = new Set(prev);
-      if (!next.delete(key)) next.add(key);
+      if (!next.delete(setId)) next.add(setId);
       return next;
     });
+    // Nothing is fetched until this click — the count on the summary comes
+    // from the set's own run record. Reopening returns to the page last read.
+    if (willOpen) openRetries(setId, retriesFor(setId)?.page ?? 0);
+  };
 
   /**
-   * The chart's rows, derived from each run's shape alone — no run is executed
-   * (mock) or expanded (API) to work this out. More than one rejection in a row
-   * collapses into a single stacked row; a lone rejection stays its own row,
-   * since stacking one thing hides it behind a click for nothing. Because this
-   * is free, "load more" can advance by ROWS, so the next click always brings
-   * the next real step of the story rather than five more rejections
-   * disappearing into a stack.
+   * The chart's rows: one per set, its accepted run. The packings list is keyed
+   * by set, so in API mode every spec is one; mock mode's plan still carries the
+   * rejections inline, and they are filtered out here — they belong under their
+   * set's summary, not in the flow. Indices stay the ones the data layer is
+   * keyed by, so a filtered row still points at the right run.
    */
-  const allRows = useMemo(() => {
-    type Row =
-      | { kind: "run"; key: string; index: number; spec: RunSpec }
-      | { kind: "stack"; key: string; indices: number[]; specs: RunSpec[] };
-    const out: Row[] = [];
-    let streak: number[] = [];
-    const flush = () => {
-      if (streak.length > 1) {
-        out.push({
-          kind: "stack",
-          key: `stack-${specs[streak[0]!]!.id}`,
-          indices: streak,
-          specs: streak.map((i) => specs[i]!),
-        });
-      } else {
-        for (const i of streak) {
-          const spec = specs[i]!;
-          out.push({ kind: "run", key: `run-${spec.id}`, index: i, spec });
-        }
-      }
-      streak = [];
-    };
-    specs.forEach((spec, i) => {
-      if (spec.failed) {
-        streak.push(i);
-        return;
-      }
-      flush();
-      out.push({ kind: "run", key: `run-${spec.id}`, index: i, spec });
-    });
-    flush();
-    return out;
-  }, [specs]);
+  const allRows = useMemo(
+    () =>
+      specs
+        .map((spec, index) => ({ key: `run-${spec.id}`, index, spec }))
+        .filter((row) => !row.spec.failed),
+    [specs],
+  );
 
   const shownRows = useMemo(
     () => allRows.slice(0, visibleRows),
     [allRows, visibleRows],
   );
 
-  /**
-   * Which runs actually need executing: the standalone rows on screen, plus the
-   * contents of any stack the reader has opened. A collapsed stack states its
-   * count from the plan, so thirty rejections cost nothing until asked for.
-   */
-  const neededIndices = useMemo(() => {
-    const need: number[] = [];
-    for (const row of shownRows) {
-      if (row.kind === "run") need.push(row.index);
-      else if (openStacks.has(row.key)) need.push(...row.indices);
-    }
-    return need;
-  }, [shownRows, openStacks]);
+  /** Which runs need executing (mock mode): the rows on screen. A set's
+   *  rejections are queued by the data layer when their page is opened. */
+  const neededIndices = useMemo(
+    () => shownRows.map((row) => row.index),
+    [shownRows],
+  );
 
   // Hand the data layer the runs on screen; it decides what that costs.
   useEffect(() => {
@@ -236,12 +242,9 @@ export function FormationChart({
   }, [request, neededIndices]);
 
   // Keep a page of rows in hand beyond what the reader has revealed, so
-  // "Load more" always has something to show rather than a pause. A stack can
-  // swallow a whole page of rejections into one row, so this may need several
-  // passes — each arrival re-runs it.
-  // `specs.length` is the trigger that keeps this going: a page of pure
-  // rejections is swallowed whole by a trailing stack, leaving the row count
-  // unchanged, and without it the pager would stall one page in.
+  // "Load more" always has something to show rather than a pause. `specs.length`
+  // stays a trigger: a page whose rows are all filtered out (mock mode) leaves
+  // the row count unchanged, and without it the pager would stall one page in.
   useEffect(() => {
     if (hasMoreRuns && allRows.length - visibleRows < LOAD_MORE) loadMoreRuns();
   }, [hasMoreRuns, loadMoreRuns, allRows.length, visibleRows, specs.length]);
@@ -250,9 +253,7 @@ export function FormationChart({
   useEffect(() => {
     const oldest = shownRows.at(-1);
     if (!oldest) return;
-    const setId =
-      oldest.kind === "run" ? oldest.spec.setId : oldest.specs.at(-1)!.setId;
-    ensureSetsDownTo(setId);
+    ensureSetsDownTo(oldest.spec.setId);
   }, [shownRows, ensureSetsDownTo, setById]);
 
   // The live set rides page one of the sets list; a brand-new machine has no
@@ -283,9 +284,7 @@ export function FormationChart({
     setOpen({ side: "set", id });
     // A deep-linked set is usually further down than the rows shown so far;
     // reveal enough of the chart to reach it, or opening it would do nothing.
-    const idx = allRows.findIndex(
-      (r) => r.kind === "run" && !r.spec.failed && r.spec.setId === id,
-    );
+    const idx = allRows.findIndex((r) => r.spec.setId === id);
     if (idx >= 0) setVisibleRows((v) => Math.max(v, idx + 1));
     // activeSet is a dependency for the ?root= deep link: the active node
     // mounts only once its row arrives, and re-opening then re-runs the
@@ -341,19 +340,24 @@ export function FormationChart({
   );
 
   /**
-   * Unstacking: each run fades in as it lands. The runs are executed one at a
-   * time, so this fires once per arrival — animate only the rows that haven't
-   * been animated yet, or every already-settled row would be yanked back to
-   * invisible on each new arrival, which reads as flicker rather than a reveal.
-   * Ids are pruned to what's still mounted, so collapsing and reopening a stack
-   * plays the reveal again.
+   * A set's rejections fade in as they land. In mock mode the runs are executed
+   * one at a time, so this fires once per arrival — animate only the rows that
+   * haven't been animated yet, or every already-settled row would be yanked back
+   * to invisible on each new arrival, which reads as flicker rather than a
+   * reveal. Ids are pruned to what's still mounted, so collapsing and reopening
+   * a summary (or turning the page) plays the reveal again.
    */
   const revealed = useRef<Set<string>>(new Set());
   useGSAP(
     () => {
+      // Hooks run even on the renders that return the loading placeholder
+      // instead of the chart, and the scope div is only in the chart. A
+      // selector string resolved against an unmounted scope is GSAP's
+      // "Invalid scope" warning, and there is nothing to reveal anyway.
+      if (!scope.current) return;
       if (typeof document !== "undefined" && document.hidden) return;
       const rows = gsap.utils.toArray<HTMLElement>(
-        "[data-stack-body] [data-flow-row]",
+        "[data-retry-body] [data-flow-row]",
       );
       const mounted = new Set(rows.map((el) => el.dataset["rowId"] ?? ""));
       for (const id of revealed.current) {
@@ -373,7 +377,7 @@ export function FormationChart({
         clearProps: "opacity,visibility,transform",
       });
     },
-    { scope, dependencies: [openStacks, specs.length] },
+    { scope, dependencies: [expandedRetries, retriesFor, specs.length] },
   );
 
 
@@ -399,54 +403,8 @@ export function FormationChart({
   // closes. The columns stay put there.
   const gridCols = gridColsFor(isPhone ? null : open);
 
-  /**
-   * A run we know of but haven't executed yet. Same shape and height as the real
-   * row, so the list neither reflows nor shifts when the run lands — only the
-   * detail line changes.
-   */
-  const renderPendingRun = (spec: RunSpec) => (
-    <div
-      key={spec.id}
-      data-flow-row
-      data-row-id={spec.id}
-      className="relative"
-    >
-      <span
-        aria-hidden
-        className="absolute left-[-16px] top-[29px] hidden h-px w-4 bg-loss/40 lg:block"
-      />
-      <div
-        className="chart-row grid min-w-0 items-start gap-x-0 sm:gap-x-3 lg:gap-x-4"
-        style={{ "--chart-cols": gridCols } as React.CSSProperties}
-      >
-        <div className="min-w-0">
-          <div className="rounded-lg border border-loss/35 bg-loss/[0.025]">
-            <div
-              className={`flex w-full flex-col items-start justify-center gap-0.5 px-2.5 pr-8 sm:px-4 sm:pr-12 lg:px-5 ${NODE_H} py-2.5 sm:py-3`}
-            >
-              <span className="whitespace-nowrap font-display text-[12px] font-semibold text-loss/80 sm:text-[14px] lg:text-[15px]">
-                <span className="sm:hidden">Task #{spec.id}</span>
-                <span className="hidden sm:inline">Packing task #{spec.id}</span>
-              </span>
-              <span className="whitespace-nowrap font-mono-num text-[10px] text-loss/50 sm:text-[11px]">
-                replaying…
-              </span>
-            </div>
-          </div>
-        </div>
-        <Connector
-          tone="loss"
-          label={STATUS_LABEL.failed}
-          hasSet={false}
-          flowing={false}
-        />
-        <div />
-      </div>
-    </div>
-  );
-
   /** One run as a flow row: task → status → the set it committed (if any). */
-  const renderRun = (t: SetTask, flowing: boolean, index: number) => {
+  const renderRun = (t: SetTask, flowing: boolean) => {
     const success = t.status === "success";
     const set = success ? setById.get(t.setId) : undefined;
     const taskOpen = open?.side === "task" && open.id === t.id;
@@ -490,9 +448,15 @@ export function FormationChart({
               isOpen={taskOpen}
               onPhone={isPhone}
               onToggle={() => {
-                // API mode serves run records without their candidate pool or
-                // lineup; pull that the moment the reader opens the node.
-                if (!taskOpen) requestDetail(index);
+                if (!taskOpen) {
+                  // API mode serves run records without their candidate pool or
+                  // lineup; pull that the moment the reader opens the node.
+                  requestDetail(t);
+                  // Opening a run is what surfaces its set's rejections.
+                  setOpenedRuns((prev) =>
+                    prev.has(t.id) ? prev : new Set(prev).add(t.id),
+                  );
+                }
                 setOpen(taskOpen ? null : { side: "task", id: t.id });
               }}
             />
@@ -529,6 +493,95 @@ export function FormationChart({
             ) : null}
           </div>
         </div>
+      </div>
+    );
+  };
+
+  /**
+   * The runs this set rejected before one claimed it — a summary that appears
+   * once the reader has opened the set's accepted run, and the paged list
+   * behind it. Nothing is fetched for a summary nobody opens: the count comes
+   * from the accepted run's own record.
+   */
+  const renderRetries = (t: SetTask) => {
+    if (t.status !== "success" || !openedRuns.has(t.id)) return null;
+    const count = retryCountFor(t.setId);
+    if (count === 0) return null;
+    const isOpen = expandedRetries.has(t.setId);
+    const page = isOpen ? retriesFor(t.setId) : undefined;
+    return (
+      // Not indented: the summary and its rejections hang off the same rail as
+      // the runs above them, so the whole column reads as one flow — the red
+      // treatment is what marks them as the set's rejected attempts.
+      <div className="flex flex-col gap-2 lg:gap-3">
+        <div data-flow-row className="relative">
+          <span
+            aria-hidden
+            className="absolute left-[-16px] top-[29px] hidden h-px w-4 bg-loss/40 lg:block"
+          />
+          <div
+            // The pill only renders while its run's detail is open, so it always
+            // rides the open-task template — same width as the run above it. At
+            // phone widths the modifier has no rule and the row stays put.
+            className="chart-row chart-row--open-task grid min-w-0 items-start gap-x-0 sm:gap-x-3 lg:gap-x-4"
+            style={{ "--chart-cols": gridCols } as React.CSSProperties}
+          >
+            <div className="min-w-0">
+              <RetrySummaryNode
+                count={count}
+                setId={t.setId}
+                isOpen={isOpen}
+                onToggle={() => toggleRetries(t.setId)}
+              />
+            </div>
+            <Connector
+              tone="loss"
+              label={STATUS_LABEL.failed}
+              hasSet={false}
+              flowing={false}
+            />
+            <div />
+          </div>
+        </div>
+
+        {isOpen && page && (
+          <div
+            data-retry-body={t.setId}
+            className="flex flex-col gap-2 lg:gap-3"
+          >
+            {page.tasks.map((r) => renderRun(r, false))}
+            {page.loading && (
+              <RetryNotice>
+                {USE_MOCK_DATA
+                  ? "Replaying the rejected runs…"
+                  : "Loading the rejected runs…"}
+              </RetryNotice>
+            )}
+            {page.error && (
+              <RetryNotice tone="loss">
+                Could not load the rejected runs. Collapse and reopen to try
+                again.
+              </RetryNotice>
+            )}
+            {page.pageCount > 1 && (
+              // In the grid, so the pager sits under the rejected runs rather
+              // than centered across a chart the rest of which is empty here.
+              <div
+                className="chart-row grid min-w-0 items-start gap-x-0 sm:gap-x-3 lg:gap-x-4"
+                style={{ "--chart-cols": gridCols } as React.CSSProperties}
+              >
+                <div className="min-w-0">
+                  <RetryPager
+                    page={page}
+                    onGoto={(p) => openRetries(t.setId, p)}
+                  />
+                </div>
+                <div />
+                <div />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -608,66 +661,20 @@ export function FormationChart({
               );
             })()}
             {shownRows.map((row, rowIdx) => {
-              if (row.kind === "run") {
-                const task = taskAt(row.index);
-                // Not executed yet — it lands a tick later and slots in here.
-                return task ? renderRun(task, rowIdx < 2, row.index) : null;
-              }
-              const isOpen = openStacks.has(row.key);
+              const task = taskAt(row.index);
+              // Not executed yet — it lands a tick later and slots in here.
+              if (!task) return null;
               return (
                 <div key={row.key} className="flex flex-col gap-2 lg:gap-3">
-                  <div data-flow-row className="relative">
-                    <span
-                      aria-hidden
-                      className="absolute left-[-16px] top-[29px] hidden h-px w-4 bg-loss/40 lg:block"
-                    />
-                    <div
-                      className="chart-row grid min-w-0 items-start gap-x-0 sm:gap-x-3 lg:gap-x-4"
-                      style={{ "--chart-cols": gridCols } as React.CSSProperties}
-                    >
-                      <div className="min-w-0">
-                        <StackNode
-                          count={row.specs.length}
-                          setId={row.specs[0]!.setId}
-                          timedOut={row.specs.filter((s) => s.timedOut).length}
-                          isOpen={isOpen}
-                          onToggle={() => toggleStack(row.key)}
-                        />
-                      </div>
-                      <Connector
-                        tone="loss"
-                        label={STATUS_LABEL.failed}
-                        hasSet={false}
-                        flowing={false}
-                      />
-                      <div />
-                    </div>
-                  </div>
-                  {/* Unstacked: every run appears at once, identified from the
-                      plan, and firms up as it is executed. Waiting for each to
-                      build before showing it would dribble thirty rows in over
-                      several seconds and reflow the page on every arrival. */}
-                  {isOpen && (
-                    <div
-                      data-stack-body={row.key}
-                      className="flex flex-col gap-2 lg:gap-3"
-                    >
-                      {row.indices.map((i) => {
-                        const task = taskAt(i);
-                        return task
-                          ? renderRun(task, false, i)
-                          : renderPendingRun(specs[i]!);
-                      })}
-                    </div>
-                  )}
+                  {renderRun(task, rowIdx < 2)}
+                  {renderRetries(task)}
                 </div>
               );
             })}
           </div>
 
-          {/* Counts are rows, not runs — a collapsed streak is one row, so the
-              next click brings the next real step rather than more rejections
-              vanishing into the stack. */}
+          {/* One row is one set, so the next click always brings the next real
+              step of the story. */}
           {(visibleRows < allRows.length || hasMoreRuns) && (
             <div className="pt-6">
               <button
@@ -908,7 +915,7 @@ function TaskNode({
       <button
         onClick={onToggle}
         aria-expanded={isOpen}
-        className={`relative flex w-full flex-col items-start justify-center gap-0.5 rounded-lg px-2.5 pr-8 sm:px-4 sm:pr-12 lg:px-5 ${NODE_H} py-2.5 text-left transition-colors sm:py-3 ${
+        className={`relative flex w-full flex-col items-start justify-center gap-0.5 rounded-lg px-2.5 pr-8 sm:px-4 sm:pr-12 lg:pl-5 ${NODE_H} py-2.5 text-left transition-colors sm:py-3 ${
           t.status === "failed" ? "hover:bg-loss/[0.045]" : "hover:bg-white/[0.03]"
         } ${
           // Expanded: pin the run's number below the site header so it stays in
@@ -918,9 +925,12 @@ function TaskNode({
             : ""
         }`}
       >
+        {/* Truncating, not nowrap: expanding the node on the other side of the
+            flow shrinks this column to its 150px floor, and nowrap text would
+            run over the card's own border and under the chevron. */}
         <span
           title={t.taskId}
-          className={`whitespace-nowrap font-display text-[12px] font-semibold sm:text-[14px] lg:text-[15px] ${
+          className={`w-full truncate font-display text-[12px] font-semibold sm:text-[14px] lg:text-[15px] ${
             t.status === "failed" ? "text-loss/80" : ""
           }`}
         >
@@ -928,7 +938,7 @@ function TaskNode({
           <span className="hidden sm:inline">Packing task #{runLabel(t)}</span>
         </span>
         <span
-          className={`whitespace-nowrap font-mono-num text-[10px] sm:text-[11px] ${
+          className={`w-full truncate font-mono-num text-[10px] sm:text-[11px] ${
             t.status === "failed" ? "text-loss/70" : "text-white/70"
           }`}
         >
@@ -1001,7 +1011,7 @@ function SetNode({
       <button
         onClick={onToggle}
         aria-expanded={isOpen}
-        className={`relative flex w-full flex-col items-start justify-center gap-0.5 rounded-lg px-2.5 pr-8 sm:gap-1 sm:px-4 sm:pr-12 lg:px-5 ${NODE_H} py-2.5 text-left transition-colors hover:bg-white/[0.03] sm:py-3 ${
+        className={`relative flex w-full flex-col items-start justify-center gap-0.5 rounded-lg px-2.5 pr-8 sm:gap-1 sm:px-4 sm:pr-12 lg:pl-5 ${NODE_H} py-2.5 text-left transition-colors hover:bg-white/[0.03] sm:py-3 ${
           // Expanded: pin the set's number below the site header so it stays in
           // view while the lineup and replay scroll past.
           isOpen
@@ -1032,8 +1042,10 @@ function SetNode({
           )}
         </span>
         {/* A ripped-out set is fully public, so it shows its lineup size. Live
-            and upcoming sets stay sealed — never reveal the size before sellout. */}
-        <span className="whitespace-nowrap font-mono-num text-[10px] text-muted sm:text-[11px]">
+            and upcoming sets stay sealed — never reveal the size before sellout.
+            Truncating for the same reason the run node does: opening a run
+            shrinks this column to its floor. */}
+        <span className="w-full truncate font-mono-num text-[10px] text-muted sm:text-[11px]">
           {s.status === "completed" ? (
             <>
               <span className="sm:hidden">{s.cardCount} cards</span>
@@ -1430,20 +1442,19 @@ function ActiveSetProvenance({ set }: { set: ActiveSetSummary }) {
 }
 
 /**
- * A streak of consecutive rejections, shown as one card with the pile visible
- * behind it. Collapsed it states the streak; expanded it hands back the
- * individual runs, each still replayable on its own.
+ * The runs a set rejected, shown as one card with the pile visible behind it.
+ * Collapsed it states the count — which the accepted run's record already
+ * carries, so it costs no request. Expanded it hands back the individual runs,
+ * a page at a time, each still replayable on its own.
  */
-function StackNode({
+function RetrySummaryNode({
   count,
   setId,
-  timedOut,
   isOpen,
   onToggle,
 }: {
   count: number;
   setId: number;
-  timedOut: number;
   isOpen: boolean;
   onToggle: () => void;
 }) {
@@ -1469,20 +1480,100 @@ function StackNode({
         <button
           onClick={onToggle}
           aria-expanded={isOpen}
-          className={`relative flex w-full flex-col items-start justify-center gap-0.5 rounded-lg px-2.5 pr-8 sm:px-4 sm:pr-12 lg:px-5 ${NODE_H} py-2.5 text-left transition-colors hover:bg-loss/[0.05] sm:py-3`}
+          className={`relative flex w-full flex-col items-start justify-center gap-0.5 rounded-lg px-2.5 pr-8 sm:px-4 sm:pr-12 lg:pl-5 ${NODE_H} py-2.5 text-left transition-colors hover:bg-loss/[0.05] sm:py-3`}
         >
-          <span className="whitespace-nowrap font-display text-[12px] font-semibold text-loss/80 sm:text-[14px] lg:text-[15px]">
-            {count} rejected runs
+          <span className="w-full truncate font-display text-[12px] font-semibold text-loss/80 sm:text-[14px] lg:text-[15px]">
+            {count} rejected run{count === 1 ? "" : "s"}
           </span>
-          <span className="whitespace-nowrap font-mono-num text-[10px] text-loss/70 sm:text-[11px]">
-            Set #{setId} unclaimed
-            {timedOut > 0 ? ` · ${timedOut} timed out` : ""}
+          <span className="w-full truncate font-mono-num text-[10px] text-loss/70 sm:text-[11px]">
+            Set #{setId} stayed unclaimed
           </span>
           <span className="absolute right-2 top-1/2 -translate-y-1/2 sm:right-3">
             <Chevron isOpen={isOpen} />
           </span>
         </button>
       </div>
+    </div>
+  );
+}
+
+/** A line where a page of rejections should be — loading, or the reason it
+ *  isn't there. */
+function RetryNotice({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone?: "loss";
+}) {
+  return (
+    <div
+      className={`rounded-lg border border-dashed px-4 py-3 font-body text-[12px] ${
+        tone === "loss"
+          ? "border-loss/40 text-loss/80"
+          : "animate-pulse border-hairline text-muted"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Page switcher for a set's rejections. Whole pages are fetched, so this is
+ * the only way past the first ten — the same windowed pager the Packing and
+ * Sets tabs use, sized down to sit inside a chart column.
+ */
+function RetryPager({
+  page,
+  onGoto,
+}: {
+  page: RetryPage;
+  onGoto: (page: number) => void;
+}) {
+  const { page: current, pageCount, total } = page;
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-1.5 py-1">
+      <button
+        onClick={() => onGoto(current - 1)}
+        disabled={current === 0}
+        className="btn-ghost h-7 px-3 text-[11px] disabled:cursor-not-allowed disabled:opacity-35"
+      >
+        ← Prev
+      </button>
+      {pageWindow(current, pageCount).map((p, i) =>
+        p === "gap" ? (
+          <span
+            key={`gap-${i}`}
+            className="px-0.5 font-mono-num text-[11px] text-muted"
+          >
+            …
+          </span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onGoto(p)}
+            aria-current={p === current ? "page" : undefined}
+            className={`h-7 min-w-7 rounded-full border px-1.5 font-mono-num text-[11px] ${
+              p === current
+                ? "border-white/60 bg-raised font-bold text-white"
+                : "border-hairline text-muted hover:text-white"
+            }`}
+          >
+            {p + 1}
+          </button>
+        ),
+      )}
+      <button
+        onClick={() => onGoto(current + 1)}
+        disabled={current >= pageCount - 1}
+        className="btn-ghost h-7 px-3 text-[11px] disabled:cursor-not-allowed disabled:opacity-35"
+      >
+        Next →
+      </button>
+      <span className="ml-1 font-mono-num text-[11px] text-white/40">
+        {total} rejected
+      </span>
     </div>
   );
 }
@@ -1496,7 +1587,7 @@ function PendingNode({ id }: { id: number }) {
       <span className="whitespace-nowrap font-display text-[12px] font-semibold text-muted sm:text-[14px] lg:text-[15px]">
         Set #{id}
       </span>
-      <span className="whitespace-nowrap font-mono-num text-[10px] text-white/30 sm:text-[12px]">
+      <span className="max-w-full truncate font-mono-num text-[10px] text-white/30 sm:text-[12px]">
         <span className="sm:hidden">pending</span>
         <span className="hidden sm:inline">pending · not yet committed</span>
       </span>

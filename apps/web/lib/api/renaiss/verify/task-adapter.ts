@@ -3,7 +3,7 @@
  * get-packing-run): one /verify/packing list entry and how it becomes a
  * row-ready SetTask.
  *
- * Adapter rules (verify-api handover doc):
+ * Adapter rules (verify API handover doc):
  *   - money fields are raw integers with 2 implied decimals — never divide
  *     here, display formatting owns the ÷100 (rule 1.2)
  *   - token arrays keep their stored order (rule 1.3)
@@ -54,11 +54,15 @@ export interface WireAttempt {
   drawsUsed: number;
 }
 
-/** One /verify/packing list entry — run record only, no token arrays. */
+/** One packings list entry — run record only, no token arrays. */
 export interface WireRun {
   taskId: string;
   setId: number;
   status: "success" | "failed";
+  /** Failed runs that targeted this set, collapsed into a count. Served by
+   * the pack-scoped list (§4) only — the set-scoped list (§4a), which serves
+   * those runs as rows, omits it. */
+  totalFailCount?: number;
   triggerSource: "checkout" | "cron" | "manual";
   algoUsed: string | null;
   errorCode: string | null;
@@ -240,8 +244,20 @@ export const toTask = (
     startedAt: run.startedAt,
     finishedAt: run.finishedAt,
     durationMs: run.durationMs,
-    // The heavy arrays live on /packing/run — fetched on expand / prefetch.
-    detailState: "pending",
+    ...(run.totalFailCount !== undefined
+      ? { totalFailCount: run.totalFailCount }
+      : {}),
+    // The heavy arrays live on /packings/{taskId} — fetched on expand /
+    // prefetch. Except for a run that never reached the selection loop (doc
+    // §4.4: no proof, no pool, no lineup — verified against a CONFIG_INVALID
+    // run, whose detail answers with empty everything): there is nothing to
+    // fetch, so it is already as loaded as it will ever be. Saying "pending"
+    // would put a "loading the candidate pool" placeholder in front of the
+    // reader that never resolves into anything.
+    detailState:
+      run.status === "failed" && run.attempts.length === 0
+        ? "loaded"
+        : "pending",
     ...(config ? { config } : {}),
     attempts: run.attempts.map((a) => ({
       algorithm: run.algoUsed ?? "Fair Set Ranked",

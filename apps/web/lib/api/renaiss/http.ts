@@ -1,6 +1,6 @@
 /**
  * Renaiss API transport. NEXT_PUBLIC_RENAISS_API_URL is the bare host (e.g.
- * https://api.example.com) — route prefixes such as /v0/fair belong to the
+ * https://api.example.com) — route prefixes such as /v1/fair belong to the
  * per-surface clients (see ./verify/http.ts), never to the env var.
  */
 import { RENAISS_API_URL } from "@/lib/config";

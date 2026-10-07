@@ -1,5 +1,5 @@
 /**
- * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v0/fair/packs/{packId}/sets
+ * Full endpoint: GET {NEXT_PUBLIC_RENAISS_API_URL}/v1/fair/packs/{packId}/sets
  *
  * The Sets tab's browse list — one pack's fully drawn sets, newest first
  * (setId DESC), a few KB per page: setId, cardCount and the genesis record,
