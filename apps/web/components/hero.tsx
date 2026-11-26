@@ -94,7 +94,7 @@ export function Hero({
       >
         Paste the transaction hash of your pack rip. We replay the draw with the
         exact production math, the ECVRF proof is verified right here in your
-        browser, card by card, until your pull is reached.
+        browser, draw by draw, until your pull is reached.
       </p>
 
       <div data-form className="mx-auto mt-8 max-w-xl">

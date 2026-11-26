@@ -7,7 +7,7 @@ export function RecipeFooter() {
     <footer className="mx-auto max-w-3xl px-6 pb-16 text-center">
       <p className="font-body text-[12px] text-muted">
         Verification recipe: α = keccak256(tag ‖ blockHash ‖ packId ‖
-        checkoutId) · ECVRF (RFC 9381, edwards25519-SHA512-ELL2) · card =
+        checkoutId) · ECVRF (RFC 9381, edwards25519-SHA512-ELL2) · asset =
         keccak256(β) mod remaining, without replacement. Full recipe in the{" "}
         <Link
           href="/whitepaper"

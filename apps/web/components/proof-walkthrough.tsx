@@ -441,7 +441,7 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
   };
 
   const sealedNote =
-    "Unlocks when this set completes — a sealed set never reveals its lineup, but steps 1–3 and the final on-chain Merkle check already prove your card and its committed slot.";
+    "Unlocks when this set completes — a sealed set never reveals its lineup, but steps 1–3 and the final on-chain Merkle check already prove your asset and its committed slot.";
 
   return (
     <div ref={scope} className="mx-auto max-w-3xl px-6 pb-20">
@@ -452,7 +452,7 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
             <span className="font-mono-num text-white">
               {rip.draws.length}
             </span>{" "}
-            cards — each draw carries its own proof. Pick one to verify:
+            assets — each draw carries its own proof. Pick one to verify:
           </p>
           <div className="flex flex-wrap gap-2">
             {rip.draws.map((d, i) => (
@@ -545,7 +545,7 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
         <Step
           n={2}
           title="Recompute the VRF input α"
-          plain="Those facts are blended into one number: the seed of your unique random draw, which determines your final card. Because the block hash didn't exist until after you paid, nobody could know this seed in advance, not even us."
+          plain="Those facts are blended into one number: the seed of your unique random draw, which determines your final asset. Because the block hash didn't exist until after you paid, nobody could know this seed in advance, not even us."
           done={done >= 2}
           enabled={armed >= 1}
           actionLabel="Compute α"
@@ -646,7 +646,7 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
         <Step
           n={4}
           title="Derive the eligible index"
-          plain="Your random number points at exactly one position among the cards still left in the set. There are no re-rolls and no second chances: one seed selects one slot. Replaying everyone's earlier draws proves the whole set's history is honest, not just yours."
+          plain="Your random number points at exactly one position among the assets still left in the set. There are no re-rolls and no second chances: one seed selects one slot. Replaying everyone's earlier draws proves the whole set's history is honest, not just yours."
           done={done >= 4}
           enabled={armed >= 3}
           actionLabel={`Compute keccak256(β) mod ${userStep?.eligibleCount ?? "…"}`}
@@ -660,7 +660,7 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
         >
           <p className="mb-3 font-body text-[13px] text-muted">
             Draws sample <em>without replacement</em>, so your draw's modulus is
-            the count of cards still available, reproduced by replaying every
+            the count of assets still available, reproduced by replaying every
             prior draw in this set.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -669,14 +669,14 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
               href="/whitepaper#procedure"
               value={String(priorCount)}
               source="api"
-              detail="Every draw of this set before yours — proofs only, no cards or buyers; each one's π verified during the replay."
+              detail="Every draw of this set before yours — proofs only, no assets or buyers; each one's π verified during the replay."
             />
             <DataChip
               label="remaining"
               href="/whitepaper#slot-mapping"
               value={String(userStep?.eligibleCount ?? 0)}
               source="local"
-              detail="The set's committed lineup, minus the cards removed by the replayed prior draws."
+              detail="The set's committed lineup, minus the assets removed by the replayed prior draws."
             />
             <DataChip
               label="index"
@@ -690,11 +690,11 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
 
         <Step
           n={5}
-          title="Reveal your card"
-          plain="The card sitting at that position is the card you were dealt. If it matches the one we recorded for you, the math, not our word, has proven your rip was fair."
+          title="Reveal your asset"
+          plain="The asset sitting at that position is the asset you drew. If it matches the one we recorded for you, the math, not our word, has proven your rip was fair."
           done={done >= 5}
           enabled={armed >= 4}
-          actionLabel="Reveal Card"
+          actionLabel="Reveal Asset"
           onAction={() => advance(5)}
           locked={sealed ? sealedNote : undefined}
         >
@@ -736,12 +736,12 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
                   }`}
                 >
                   {userStep.matchesRecord
-                    ? "✓ Matches the card the backend recorded, this rip is provably yours."
-                    : "✗ Does NOT match the recorded card, the record diverges from the math."}
+                    ? "✓ Matches the asset the backend recorded, this rip is provably yours."
+                    : "✗ Does NOT match the recorded asset, the record diverges from the math."}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <DataChip
-                    label="recorded card"
+                    label="recorded asset"
                     href="/whitepaper#slot-mapping"
                     value={formatTokenId(witness.resolvedTokenId ?? "0")}
                     full={witness.resolvedTokenId ?? ""}
@@ -749,12 +749,12 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
                     detail="The draw record's resolution — what Renaiss says you drew."
                   />
                   <DataChip
-                    label="derived card"
+                    label="derived asset"
                     href="/whitepaper#slot-mapping"
                     value={formatTokenId(userStep.pickedTokenId)}
                     full={userStep.pickedTokenId}
                     source="local"
-                    detail="The card the replayed math landed on — derived in your browser, independent of the record."
+                    detail="The asset the replayed math landed on — derived in your browser, independent of the record."
                   />
                 </div>
               </div>
@@ -763,13 +763,13 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
         </Step>
         <Step
           n={6}
-          title="On-chain Merkle check — prove your card in set"
+          title="On-chain Merkle check — prove your asset in set"
           plain={
             <>
               A different claim from the draw math above — this verifies the
-              lineup, not the randomness. Before the first rip, every card of
+              lineup, not the randomness. Before the first rip, every asset of
               the set was hashed into one fingerprint (the Merkle root) and
-              published. Folding your card's hash up its inclusion path onto
+              published. Folding your asset's hash up its inclusion path onto
               that fingerprint proves it sat in the committed lineup all
               along, not slipped in afterwards
               {sealed
@@ -800,7 +800,7 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
                 value={formatTokenId(target.card.tokenId)}
                 full={target.card.tokenId}
                 source="api"
-                detail="Your card's token id — one of the three values its leaf commits. Click to see the token on BscScan."
+                detail="Your asset's token id — one of the three values its leaf commits. Click to see the token on BscScan."
               />
               <DataChip
                 label="salt"
@@ -808,7 +808,7 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
                 value={truncateHex(target.card.merkleSalt ?? "0x", 5)}
                 full={target.card.merkleSalt ?? ""}
                 source="api"
-                detail="The card's Merkle leaf salt — revealed at draw time, it keeps unsold cards' leaves unguessable."
+                detail="The asset's Merkle leaf salt — revealed at draw time, it keeps unsold assets' leaves unguessable."
               />
               <DataChip
                 label="path"
@@ -846,8 +846,8 @@ export function ProofWalkthrough({ rip }: { rip: RipLookup }) {
             }`}
           >
             {inclusionOk
-              ? "✓ Your card's leaf folds exactly to the committed root — it was in the lineup before the first rip."
-              : "✗ The folded root does not match the commitment — this card was not in the committed lineup."}
+              ? "✓ Your asset's leaf folds exactly to the committed root — it was in the lineup before the first rip."
+              : "✗ The folded root does not match the commitment — this asset was not in the committed lineup."}
           </p>
         </Step>
       </ol>
